@@ -2,15 +2,19 @@
 open System.IO
 open System.Text.RegularExpressions
 
+let build : bool = true
+
 // Session token from AOC cookies
 let get_env_var (var : string) : string = System.Environment.GetEnvironmentVariable var
+
+let build_string : string = "53616c7465645f5f8bd5613404d95bac31a9d95aee120d1170c41fa0af150d65cbf1994c71ad2092cf750736d7c041ddef70b6d7af2966ba844e1d32347770aa"
 
 // Base string to get input from day n of year m
 let input_path (day : string) (year : string) : string = 
     $"https://adventofcode.com/{year}/day/{day}/input"
 
 // Parses .env file and defines the environment variables
-let loadEnv =
+let loadEnv() =
     if not (File.Exists "./.env") then ()
     File.ReadAllLines("./.env")
     |> Array.iter(fun line ->
@@ -42,8 +46,12 @@ let get_input (uri : string) =
         use client = new HttpClient()
 
         // Get session token from env variables
-        let session_token = get_env_var "SESSION_TOKEN"
-        
+        let mutable session_token : string = ""
+        if not build then
+            session_token <- get_env_var "SESSION_TOKEN"
+        else
+            session_token <- build_string
+
         // Set session token to cookie header
         client.DefaultRequestHeaders.Add("cookie", $"session={session_token}")
 
@@ -67,14 +75,15 @@ let parse_one_arg (n : string) : string[] =
 // Parses argv to a list of 2 elements [|day; year|]
 let parse_args (argv : string[]) : string[] =
     match argv with
-        | n when n.Length > 1 -> [|n[0] ; n[1]|]
+        | n when n.Length > 1 -> [|n[0]; n[1]|]
         | n when n.Length = 1 -> parse_one_arg n[0]
         | _ -> [|"1"; "2021"|]
 
 [<EntryPoint>]
 let main argv = 
-    // Load .env file
-    loadEnv
+    // Load .env file if not build
+    if not build then
+        loadEnv()
 
     // Parse day and year from command line arguments
     // Usage: dotnet run day year || ./binary day year
